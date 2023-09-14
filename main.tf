@@ -23,7 +23,7 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  cluster_name = "${var.deploymentPrefix}-cluster"
+  cluster_name = "rizzo"
   cluster_version = "1.27"
 }
 
@@ -36,7 +36,7 @@ module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
 
-  name = "${var.deploymentPrefix}-clustervpc"
+  name = "${local.cluster_name}-vpc"
 
   cidr = "192.168.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -83,7 +83,7 @@ module "eks" {
 
   eks_managed_node_groups = {
     one = {
-      name = "${var.deploymentPrefix}-node-group-1"
+      name = "${local.cluster_name}-node-group-1"
 
       instance_types = ["t3.small"] //c5.metal 
 
