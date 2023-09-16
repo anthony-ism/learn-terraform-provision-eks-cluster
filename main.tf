@@ -42,7 +42,7 @@ module "vpc" {
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
 
   private_subnets = ["192.168.1.0/24", "192.168.2.0/24", "192.168.3.0/24"]
-  public_subnets  = ["196.182.32.48/32"]
+  public_subnets  = ["192.168.11.0/24", "192.168.12.0/24", "192.168.13.0/24"]
 
   enable_nat_gateway   = true
   single_nat_gateway   = true
@@ -125,8 +125,8 @@ resource "aws_eks_addon" "ebs-csi" {
 }
 
 
-resource "kubernetes_namespace" "rizzo" {
-  metadata {
-    name = "rizzo"
-  }
-}
+# resource "kubernetes_namespace" "rizzo" {
+#   metadata {
+#     name = "rizzo"
+#   }
+# }
