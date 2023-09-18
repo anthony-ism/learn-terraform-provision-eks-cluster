@@ -6,6 +6,9 @@ This repo has been modified from its original intention, [Learn Terraform - Prov
 ### Prerequisites
 - [Terraform v1.5.7](https://developer.hashicorp.com/terraform/downloads)
 - [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+- [Kubectl](https://kubernetes.io/docs/tasks/tools)
+- [Kubeps1](https://github.com/jonmosco/kube-ps1) - Not require but highly recommended 
+
 
 # Getting Started
 After cloning the repo ensure you have an AWS configured with the account you wish to deploy this EKS cluster. 
@@ -24,13 +27,30 @@ Initialize the Terraform project.
  $ terraform init
 ```
 
+Initialize the Terraform project.
+```bash
+ $ terraform apply
+```
+
+Once complete you must configure kubectl
+```bash
+aws eks --region $(terraform output -raw region) update-kubeconfig --name $(terraform output -raw cluster_name)
+```
+
+Then lastly verify your cluster
+
+```bash
+kubectl cluster-info
+```
+
+You should see roughly the following output
+```bash
+Kubernetes control plane is running at https://5AB8C9482D4F766B32E18BBF7A1CF8FF.gr7.us-west-2.eks.amazonaws.com
+CoreDNS is running at https://5AB8C9482D4F766B32E18BBF7A1CF8FF.gr7.us-west-2.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+```
+
+
 - TODO Finish tutorial
-    - eks addon never finishes - seems to be issue on aws side (https://github.com/hashicorp/terraform-provider-aws/issues/27591)
-    - Configure kubectl
-    - Verify the Cluster
-    - Clean up your workspace
-    - Update docs on cleanup
-    - Research Service role
-    - Fix namespace code
+    - Research Service role --
     - Add public ingress and nginx hello world
     - Profit

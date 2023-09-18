@@ -23,7 +23,7 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  cluster_name = "rizzo"
+  cluster_name    = "rizzo"
   cluster_version = "1.27"
 }
 
@@ -91,42 +91,34 @@ module "eks" {
 
       min_size     = 3
       max_size     = 6
-      desired_size = 2
+      desired_size = 3
     }
   }
 }
 
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 
-# https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
-data "aws_iam_policy" "ebs_csi_policy" {
-  arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-}
-
-module "irsa-ebs-csi" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-assumable-role-with-oidc"
-  version = "4.7.0"
-
-  create_role                   = true
-  role_name                     = "AmazonEKSTFEBSCSIRole-${module.eks.cluster_name}"
-  provider_url                  = module.eks.oidc_provider
-  role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
-  oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
-}
-
-resource "aws_eks_addon" "ebs-csi" {
-  cluster_name             = module.eks.cluster_name
-  addon_name               = "aws-ebs-csi-driver"
-  addon_version            = "v1.20.0-eksbuild.1"
-  service_account_role_arn = module.irsa-ebs-csi.iam_role_arn
-  tags = {
-    "eks_addon" = "ebs-csi"
-    "terraform" = "true"
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", local.cluster_name]
   }
 }
 
+resource "kubernetes_namespace" "rizzo" {
+  metadata {
+    name = "rizzo"
+  }
+}
 
-# resource "kubernetes_namespace" "rizzo" {
-#   metadata {
-#     name = "rizzo"
-#   }
-# }
+module "iam_eks_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-eks-role"
+
+  role_name = "${local.cluster_name}-cluster"
+
+  cluster_service_accounts = {
+    "${local.cluster_name}" = ["default:${local.cluster_name}-serviceaccount"]
+  }
+}
