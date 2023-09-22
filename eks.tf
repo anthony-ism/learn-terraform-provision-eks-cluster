@@ -3,6 +3,17 @@ data "aws_ssm_parameter" "eks_ami_release_version" {
   name = "/aws/service/eks/optimized-ami/${local.cluster_version}/amazon-linux-2/recommended/release_version"
 }
 
+data "kubernetes_service" "ingress_nginx" {
+
+  metadata {
+    name      = "nginx-ingress-controller"
+    namespace = "default"
+  }
+  depends_on = [
+    helm_release.nginx-ingress-controller
+  ]
+}
+
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.15.3"
@@ -33,6 +44,7 @@ module "eks" {
   }
 }
 
+
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
@@ -43,6 +55,22 @@ provider "kubernetes" {
     args        = ["eks", "get-token", "--cluster-name", local.cluster_name]
   }
 }
+
+provider "helm" {
+  kubernetes {
+    host                   = module.eks.cluster_endpoint
+    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", local.cluster_name]
+    }
+  }
+}
+
+
+
 
 resource "kubernetes_namespace" "rizzo" {
   metadata {
